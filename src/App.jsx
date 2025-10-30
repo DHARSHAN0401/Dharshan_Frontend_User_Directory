@@ -1,71 +1,67 @@
-import { useState, useEffect } from 'react'
+import React, { useState, useEffect, useMemo } from 'react'
 import './App.css'
-import UserCard from './components/UserCard'
+import UserCard from './components/Usercard'
 
-function App() {
+export default function App() {
   const [users, setUsers] = useState([])
-  const [search, setSearch] = useState('')
-  const [isLoading, setIsLoading] = useState(true)
+  const [q, setQ] = useState('')
+  const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    getUsers()
+    let mounted = true
+    async function load() {
+      try {
+        const res = await fetch('https://jsonplaceholder.typicode.com/users')
+        const data = await res.json()
+        if (mounted) setUsers(data)
+      } catch (e) {
+        console.error('fetch error', e)
+      } finally {
+        if (mounted) setLoading(false)
+      }
+    }
+    load()
+    return () => (mounted = false)
   }, [])
 
-  async function getUsers() {
-    try {
-      const res = await fetch('https://jsonplaceholder.typicode.com/users')
-      const data = await res.json()
-      setUsers(data)
-    } catch (error) {
-      console.error('Error getting users:', error)
-    } finally {
-      setIsLoading(false)
-    }
-  }
+  function onChange(e) { setQ(e.target.value) }
 
-  function handleSearchChange(event) {
-    setSearch(event.target.value)
-  }
-
-  const showUsers = users.filter(user =>
-    user.name.toLowerCase().includes(search.toLowerCase())
-  )
+  const filtered = useMemo(() => {
+    return users
+      .filter(u => u.name.toLowerCase().includes(q.toLowerCase()))
+      .sort((a, b) => a.name.localeCompare(b.name))
+  }, [users, q])
 
   return (
     <div className="app">
       <header className="app-header">
-        <h1>My User List</h1>
-        <p className="subtitle">Responsive single-page app</p>
+        <div className="brand">
+          <h1>My User List</h1>
+          <p className="subtitle">Clean, professional user directory</p>
+        </div>
+
+        <div className="header-controls">
+          <div className="search-box">
+            <input
+              type="search"
+              placeholder="Search Here"
+              value={q}
+              onChange={onChange}
+              className="search-input"
+            />
+          </div>
+        </div>
       </header>
 
-      <div className="controls">
-        <div className="search-box">
-          <input
-            type="text"
-            placeholder="Search users by name..."
-            value={search}
-            onChange={handleSearchChange}
-            aria-label="Search Here"
-          />
-        </div>
-        <div className="count">
-          {!isLoading && <span>{showUsers.length} result{showUsers.length !== 1 ? 's' : ''}</span>}
-        </div>
+      <div className="user-grid">
+        {loading && <div className="loading">Loading users…</div>}
+        {!loading && filtered.length === 0 && <div className="no-results">No users found</div>}
+        {!loading && filtered.map(user => (
+          <UserCard key={user.id} user={user} />
+        ))}
       </div>
-
-      <main className="user-grid">
-        {isLoading ? (
-          <div className="loading">Loading users</div>
-        ) : showUsers.length === 0 ? (
-          <div className="no-results">No users found.</div>
-        ) : (
-          showUsers.map(user => <UserCard key={user.id} user={user} />)
-        )}
-      </main>
 
       <footer className="footer">Data from jsonplaceholder</footer>
     </div>
   )
 }
-
-export default App

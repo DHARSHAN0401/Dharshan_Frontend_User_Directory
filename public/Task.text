@@ -11,13 +11,3 @@
 ●	• API integration and functionality – 30%
 ●	• Responsive UI design – 20%
 ●	• Clean UI and creativity – 20%
-
-
-
-
-src/
- ┣ components/
- ┃ ┗ UserCard.js
- ┣ App.js
- ┣ App.css
- ┗ index.j
